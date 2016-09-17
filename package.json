@@ -1,0 +1,24 @@
+{
+  "name": "speedtest-webui",
+  "version": "0.0.1",
+  "description": "A Web UI for automatic speedtests.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moritzmhmk/SpeedTest.git"
+  },
+  "author": "moritzmhmk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/moritzmhmk/SpeedTest/issues"
+  },
+  "homepage": "https://github.com/moritzmhmk/SpeedTest#readme",
+  "dependencies": {
+    "express": "^4.14.0",
+    "progress": "^1.1.8",
+    "speedtest-net": "^1.2.7"
+  }
+}
