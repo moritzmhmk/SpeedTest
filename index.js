@@ -45,6 +45,6 @@ app.get('/results', function (req, res) {
   res.send(test_results)
 })
 
-app.listen(3000, function () {
-  console.log('WebUI on port 3000!')
+app.listen(8000, function () {
+  console.log('WebUI on port 8000!')
 })
