@@ -4,17 +4,25 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <style>
-    .areaUpload {
-      fill: red;
-      clip-path: url(#clip);
-    }
-    .areaDownload {
-      fill: green;
-      clip-path: url(#clip);
-    }
     .area {
       fill: steelblue;
       clip-path: url(#clip);
+    }
+    .line1, .line2 {
+      fill: none;
+      stroke-width: 1.5px;
+      clip-path: url(#clip);
+    }
+    .dot1, .dot2 {
+      fill: white;
+      stroke-width: 1.5px;
+      clip-path: url(#clip);
+    }
+    .line1, .dot1 {
+      stroke: steelblue;
+    }
+    .line2, .dot2 {
+      stroke: red;
     }
     .zoom {
       cursor: move;
@@ -36,7 +44,7 @@
 
     var x = d3.scaleTime().range([0, width]),
         x2 = d3.scaleTime().range([0, width]),
-        y = d3.scaleLinear().range([height, 0]),
+        y = d3.scaleLinear().range([height, 4]), // 4 -> allows dots (r=3.5) to be fully visible
         y2 = d3.scaleLinear().range([height2, 0]);
 
     var xAxis = d3.axisBottom(x),
@@ -53,17 +61,15 @@
         .extent([[0, 0], [width, height]])
         .on("zoom", zoomed);
 
-    var areaUpload = d3.area()
-        .curve(d3.curveMonotoneX)
-        .x(function(d) { return x(new Date(d.date)); })
-        .y0(height)
-        .y1(function(d) { return y(d.speeds.upload); });
+    var line1 = d3.line()
+      .x(function(d) { return x(new Date(d.date)); })
+      .y(function(d) { return y(d.speeds.download); })
+      .curve(d3.curveMonotoneX);
 
-    var areaDownload = d3.area()
-        .curve(d3.curveMonotoneX)
-        .x(function(d) { return x(new Date(d.date)); })
-        .y0(height)
-        .y1(function(d) { return y(d.speeds.download); });
+    var line2 = d3.line()
+      .x(function(d) { return x(new Date(d.date)); })
+      .y(function(d) { return y(d.speeds.upload); })
+      .curve(d3.curveMonotoneX);
 
     var area2 = d3.area()
         .curve(d3.curveMonotoneX)
@@ -93,13 +99,29 @@
 
       focus.append("path")
           .datum(json)
-          .attr("class", "areaDownload")
-          .attr("d", areaDownload);
+          .attr("class", "line1")
+          .attr("d", line1);
+
+      focus.selectAll(".dot1")
+        .data(json)
+        .enter().append("circle")
+        .attr("class", "dot1")
+        .attr("cx", line1.x())
+        .attr("cy", line1.y())
+        .attr("r", 3.5);
 
       focus.append("path")
           .datum(json)
-          .attr("class", "areaUpload")
-          .attr("d", areaUpload);
+          .attr("class", "line2")
+          .attr("d", line2);
+
+      focus.selectAll(".dot2")
+        .data(json)
+        .enter().append("circle")
+        .attr("class", "dot2")
+        .attr("cx", line2.x())
+        .attr("cy", line2.y())
+        .attr("r", 3.5);
 
       focus.append("g")
           .attr("class", "axis axis--x")
@@ -137,8 +159,10 @@
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
       var s = d3.event.selection || x2.range();
       x.domain(s.map(x2.invert, x2));
-      focus.select(".areaUpload").attr("d", areaUpload);
-      focus.select(".areaDownload").attr("d", areaDownload);
+      focus.select(".line1").attr("d", line1);
+      focus.selectAll(".dot1").attr("cx", line1.x())
+      focus.select(".line2").attr("d", line2);
+      focus.selectAll(".dot2").attr("cx", line2.x())
       focus.select(".axis--x").call(xAxis);
       svg.select(".zoom").call(zoom.transform, d3.zoomIdentity
           .scale(width / (s[1] - s[0]))
@@ -149,8 +173,10 @@
       if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
       var t = d3.event.transform;
       x.domain(t.rescaleX(x2).domain());
-      focus.select(".areaUpload").attr("d", areaUpload);
-      focus.select(".areaDownload").attr("d", areaDownload);
+      focus.select(".line1").attr("d", line1);
+      focus.selectAll(".dot1").attr("cx", line1.x())
+      focus.select(".line2").attr("d", line2);
+      focus.selectAll(".dot2").attr("cx", line2.x())
       focus.select(".axis--x").call(xAxis);
       context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
     }
