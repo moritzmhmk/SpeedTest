@@ -13,7 +13,12 @@
       stroke-width: 1.5px;
       clip-path: url(#clip);
     }
-    .dot1, .dot2 {
+    .verticalLine {
+      fill: none;
+      stroke: black;
+      opacity: 0.2;
+    }
+    .dot1, .dot2, .dot1selected, .dot2selected {
       fill: white;
       stroke-width: 1.5px;
       clip-path: url(#clip);
@@ -21,8 +26,14 @@
     .line1, .dot1 {
       stroke: steelblue;
     }
+    .dot1selected {
+      fill: steelblue;
+    }
     .line2, .dot2 {
       stroke: red;
+    }
+    .dot2selected {
+      fill: red;
     }
     .zoom {
       cursor: move;
@@ -32,15 +43,17 @@
   </style>
 </head>
 <body>
-  <svg width="960" height="500"></svg>
+  <svg style="width:100%;height:100%;position:absolute;"
+  preserveAspectRatio="xMinYMin meet"
+  viewBox="0 0 960 500"></svg>
   <script src="js/d3.v4.min.js"></script>
   <script>
     var svg = d3.select("svg"),
         margin = {top: 20, right: 20, bottom: 110, left: 40},
         margin2 = {top: 430, right: 20, bottom: 30, left: 40},
-        width = +svg.attr("width") - margin.left - margin.right,
-        height = +svg.attr("height") - margin.top - margin.bottom,
-        height2 = +svg.attr("height") - margin2.top - margin2.bottom;
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom,
+        height2 = 500 - margin2.top - margin2.bottom;
 
     var x = d3.scaleTime().range([0, width]),
         x2 = d3.scaleTime().range([0, width]),
@@ -71,6 +84,8 @@
       .y(function(d) { return y(d.speeds.upload); })
       .curve(d3.curveMonotoneX);
 
+    var selectedDate, selectedDownload, selectedUpload;
+
     var area2 = d3.area()
         .curve(d3.curveMonotoneX)
         .x(function(d) { return x2(new Date(d.date)); })
@@ -82,6 +97,13 @@
       .append("rect")
         .attr("width", width)
         .attr("height", height);
+
+    svg.append("rect")
+        .attr("class", "zoom")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .call(zoom);
 
     var focus = svg.append("g")
         .attr("class", "focus")
@@ -102,18 +124,19 @@
           .attr("class", "line1")
           .attr("d", line1);
 
+      focus.append("path")
+          .datum(json)
+          .attr("class", "line2")
+          .attr("d", line2);
+
       focus.selectAll(".dot1")
         .data(json)
         .enter().append("circle")
         .attr("class", "dot1")
         .attr("cx", line1.x())
         .attr("cy", line1.y())
-        .attr("r", 3.5);
-
-      focus.append("path")
-          .datum(json)
-          .attr("class", "line2")
-          .attr("d", line2);
+        .attr("r", 3.5)
+        .on("mouseover", dot_mouseover)
 
       focus.selectAll(".dot2")
         .data(json)
@@ -121,7 +144,26 @@
         .attr("class", "dot2")
         .attr("cx", line2.x())
         .attr("cy", line2.y())
-        .attr("r", 3.5);
+        .attr("r", 3.5)
+        .on("mouseover", dot_mouseover)
+
+      focus.append("line")
+        .attr("x1", -100)
+        .attr("x2", -100)
+        .attr("y1", 0)
+        .attr("y2", height)
+        .attr("class", "verticalLine");
+      focus.append("circle").attr("cx", -100).attr("cy", 0).attr("r", 3.5).attr("class", "dot1selected");
+      focus.append("circle").attr("cx", -100).attr("cy", 0).attr("r", 3.5).attr("class", "dot2selected");
+
+      function dot_mouseover (d) {
+        selectedDate = new Date(d.date)
+        selectedDownload = d.speeds.download
+        selectedUpload = d.speeds.upload
+        focus.selectAll(".verticalLine").attr("x1", x(selectedDate)).attr("x2", x(selectedDate))
+        focus.selectAll(".dot1selected").attr("cx", x(selectedDate)).attr("cy", y(selectedDownload))
+        focus.selectAll(".dot2selected").attr("cx", x(selectedDate)).attr("cy", y(selectedUpload))
+      }
 
       focus.append("g")
           .attr("class", "axis axis--x")
@@ -146,13 +188,6 @@
           .attr("class", "brush")
           .call(brush)
           .call(brush.move, x.range());
-
-      svg.append("rect")
-          .attr("class", "zoom")
-          .attr("width", width)
-          .attr("height", height)
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-          .call(zoom);
     });
 
     function brushed() {
@@ -164,6 +199,11 @@
       focus.select(".line2").attr("d", line2);
       focus.selectAll(".dot2").attr("cx", line2.x())
       focus.select(".axis--x").call(xAxis);
+      if (selectedDate) {
+        focus.selectAll(".verticalLine").attr("x1", x(selectedDate)).attr("x2", x(selectedDate))
+        focus.selectAll(".dot1selected").attr("cx", x(selectedDate)).attr("cy", y(selectedDownload))
+        focus.selectAll(".dot2selected").attr("cx", x(selectedDate)).attr("cy", y(selectedUpload))
+      }
       svg.select(".zoom").call(zoom.transform, d3.zoomIdentity
           .scale(width / (s[1] - s[0]))
           .translate(-s[0], 0));
@@ -178,6 +218,11 @@
       focus.select(".line2").attr("d", line2);
       focus.selectAll(".dot2").attr("cx", line2.x())
       focus.select(".axis--x").call(xAxis);
+      if (selectedDate) {
+        focus.selectAll(".verticalLine").attr("x1", x(selectedDate)).attr("x2", x(selectedDate))
+        focus.selectAll(".dot1selected").attr("cx", x(selectedDate)).attr("cy", y(selectedDownload))
+        focus.selectAll(".dot2selected").attr("cx", x(selectedDate)).attr("cy", y(selectedUpload))
+      }
       context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
     }
   </script>
