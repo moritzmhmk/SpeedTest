@@ -28,7 +28,7 @@ function testSpeed () {
   })
 }
 
-setInterval(testSpeed, 60 * 60 * 1000)
+setInterval(testSpeed, 20 * 60 * 1000)
 // TODO testSpeed()
 
 var app = express()
