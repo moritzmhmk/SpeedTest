@@ -26,10 +26,15 @@ function testSpeed () {
   test.on('error', function (err) {
     console.error(err)
   })
+
+  fs.writeFile('./results.backup.json', JSON.stringify(test_results), function (err) {
+    if (err) { console.log(err) }
+  })
+  
 }
 
 setInterval(testSpeed, 20 * 60 * 1000)
-// TODO testSpeed()
+testSpeed()
 
 var app = express()
 
